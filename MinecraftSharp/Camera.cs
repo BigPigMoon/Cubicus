@@ -76,9 +76,9 @@ namespace Cubicus
             if (dir == CameraMovement.Right)
                 position += right * velocity;
             if (dir == CameraMovement.Up)
-                position += up * velocity;
+                position += new Vector3(0.0f, 1.0f, 0.0f) * velocity;
             if (dir == CameraMovement.Down)
-                position -= up * velocity;
+                position -= new Vector3(0.0f, 1.0f, 0.0f) * velocity;
         }
 
         public void ProcessMouseMovement(float xoffset, float yoffset)

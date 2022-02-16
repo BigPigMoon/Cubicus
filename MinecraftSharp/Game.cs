@@ -31,14 +31,13 @@ namespace Cubicus
 
             //MousePosition = lastMousePos;
 
-            Console.WriteLine(GL.GetString(StringName.Version));
-            Console.WriteLine(GL.GetString(StringName.Vendor));
-            Console.WriteLine(GL.GetString(StringName.Renderer));
-            Console.WriteLine(GL.GetString(StringName.ShadingLanguageVersion));
+            //Console.WriteLine(GL.GetString(StringName.Version));
+            //Console.WriteLine(GL.GetString(StringName.Vendor));
+            //Console.WriteLine(GL.GetString(StringName.Renderer));
+            //Console.WriteLine(GL.GetString(StringName.ShadingLanguageVersion));
 
             VSync = VSyncMode.On;
-            CursorVisible = true;
-            //CursorGrabbed = true;
+            CursorGrabbed = true;
         }
 
         public string NameExampleWindow { private set; get; }

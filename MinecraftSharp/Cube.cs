@@ -8,10 +8,23 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 
 namespace Cubicus
 {
+    [Flags]
+    public enum Faces
+    {
+        Null =  0b_0000_0000,
+        Front = 0b_0000_0001,
+        Back =  0b_0000_0010,
+        Right = 0b_0000_0100,
+        Left =  0b_0000_1000,
+        Up =    0b_0001_0000,
+        Down =  0b_0010_0000,
+    };
+
     public class Cube
     {
         public Vector3i position;
         public bool air;
+        public Faces visibleFaces = 0;
 
         private Shader shader;
         private Texture texture;
@@ -147,13 +160,45 @@ namespace Cubicus
             shader.SetUniformMat4("view", view);
             shader.SetUniformMat4("model", model);
 
-            for (int i = 0; i < 6; i++)
-            {
-                faces[i].Activate();
-                faces[i].Draw(0, 6);
-            }
+            DrawFaces();
+
+            //for (int i = 0; i < 6; i++) { faces[i].Activate(); faces[i].Draw(0, 6); }
 
             shader.DeactiveProgram();
+        }
+
+        private void DrawFaces()
+        {
+            if (visibleFaces.HasFlag(Faces.Front))
+            {
+                faces[0].Activate();
+                faces[0].Draw(0, 6);
+            }
+            if (visibleFaces.HasFlag(Faces.Back))
+            {
+                faces[1].Activate();
+                faces[1].Draw(0, 6);
+            }
+            if (visibleFaces.HasFlag(Faces.Right))
+            {
+                faces[2].Activate();
+                faces[2].Draw(0, 6);
+            }
+            if (visibleFaces.HasFlag(Faces.Left))
+            {
+                faces[3].Activate();
+                faces[3].Draw(0, 6);
+            }
+            if (visibleFaces.HasFlag(Faces.Up))
+            {
+                faces[4].Activate();
+                faces[4].Draw(0, 6);
+            }
+            if (visibleFaces.HasFlag(Faces.Down))
+            {
+                faces[5].Activate();
+                faces[5].Draw(0, 6);
+            }
         }
     }
 }

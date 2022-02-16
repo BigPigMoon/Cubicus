@@ -11,12 +11,11 @@ namespace Cubicus
     public class Chunk
     {
         private List<Cube> cubes = new List<Cube>();
-        private List<Cube> drawingCube = new List<Cube>();
         public List<Chunk> neigborChunks;
 
         public Vector2i position;
 
-        private Vector3i size = new Vector3i(16, 20, 16);
+        private Vector3i size = new Vector3i(16, 5, 16);
 
         public Chunk(int x, int y)
         {
@@ -34,29 +33,42 @@ namespace Cubicus
                 }
             }
 
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < size.Y; j++)
             {
                 for (int k = 0; k < size.Z; k++)
                 {
                     for (int i = 0; i < size.X; i++)
                     {
-                        cubes[i + k * size.Z + j * (size.Y * size.Z)].air = false;
+                        cubes[i + k * size.Z + j * (size.X * size.Z)].air = false;
                     }
                 }
             }
+
+            foreach (Cube item in cubes)
+            {
+                item.visibleFaces = CubeHasNeighbor(item.position);
+            }
         }
 
-        public bool CubeHasNeighbor(Vector3i pos)
+        public Faces CubeHasNeighbor(Vector3i pos)
         {
-            // y * size.y + z * size.z + x
+            Faces ret = Faces.Null;
+
             int x = pos.X;
             int y = pos.Y;
             int z = pos.Z;
+            int s = size.X * size.Y * size.Z;
 
-            if (x - 1 < 0 || x + 2 > size.X || y - 1 < 0 || y + 2 > size.Y || z - 1 < 0 || z + 2 > size.Z)
-                return true;
+            if (x - 1 < 0 || x - 1 + z * size.Z + y * size.X * size.Z > 0 && cubes[x - 1 + z * size.Z + y * size.X * size.Z].air) ret |= Faces.Left;
+            if (x + 1 >= size.X || x + 1 + z * size.Z + y * size.X * size.Z < s && cubes[x + 1 + z * size.Z + y * size.X * size.Z].air) ret |= Faces.Right;
 
-            return false;
+            if (z - 1 < 0 || x + z - 1 * size.Z + y * size.X * size.Z > 0 && cubes[x + z - 1 * size.Z + y * size.X * size.Z].air) ret |= Faces.Back;
+            if (z + 1 >= size.Z || x + z + 1 * size.Z + y * size.X * size.Z < s && cubes[x + z + 1 * size.Z + y * size.X * size.Z].air) ret |= Faces.Front;
+
+            if (y - 1 < 0 || x + z * size.Z + y - 1 * size.X * size.Z > 0 && cubes[x + z * size.Z + y - 1 * size.X * size.Z].air) ret |= Faces.Down;
+            if (y + 1 >= size.Y || x + z * size.Z + y + 1 * size.X * size.Z < s && cubes[x + z * size.Z + y + 1 * size.X * size.Z].air) ret |= Faces.Up;
+
+            return ret;
         }
 
         public void Draw(Matrix4 projection, Matrix4 view, Vector3 cameraPos)
