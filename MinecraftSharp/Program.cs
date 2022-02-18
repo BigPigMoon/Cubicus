@@ -15,7 +15,7 @@ namespace Cubicus // Note: actual namespace depends on the project name.
         {
             var nativeWinSettings = new NativeWindowSettings()
             {
-                Size = new Vector2i(1280, 720),
+                Size = new Vector2i(1600, 900),
                 WindowBorder = WindowBorder.Resizable,
                 WindowState = WindowState.Normal,
 

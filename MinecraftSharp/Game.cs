@@ -15,13 +15,18 @@ namespace Cubicus
         private Vector2 lastMousePos;
         private bool polyVisible = true;
 
+        private int range = 10;
+        private int amount = 9;
+
         private Camera camera;
-        private Chunk[] world;
+        private Chunk[,] world;
+
+        Matrix4 projection;
 
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
         {
-            NameExampleWindow = "Index Buffer Object";
+            NameExampleWindow = "Cubicus";
             Title = NameExampleWindow;
 
             size = nativeWindowSettings.Size;
@@ -29,12 +34,10 @@ namespace Cubicus
             lastMousePos.X = size.X / 2;
             lastMousePos.Y = size.Y / 2;
 
-            //MousePosition = lastMousePos;
-
-            //Console.WriteLine(GL.GetString(StringName.Version));
-            //Console.WriteLine(GL.GetString(StringName.Vendor));
-            //Console.WriteLine(GL.GetString(StringName.Renderer));
-            //Console.WriteLine(GL.GetString(StringName.ShadingLanguageVersion));
+            Console.WriteLine(GL.GetString(StringName.Version));
+            Console.WriteLine(GL.GetString(StringName.Vendor));
+            Console.WriteLine(GL.GetString(StringName.Renderer));
+            Console.WriteLine(GL.GetString(StringName.ShadingLanguageVersion));
 
             VSync = VSyncMode.On;
             CursorGrabbed = true;
@@ -47,44 +50,46 @@ namespace Cubicus
             base.OnLoad();
 
             GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
-            GL.Enable(EnableCap.DepthTest);
-            GL.DepthFunc(DepthFunction.Less);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Front);
-            // GL.PolygonMode(MaterialFace.Back, PolygonMode.Point);
 
-            camera = new Camera(new Vector3(0.0f, 0.0f, 5.0f), new Vector3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
+            camera = new Camera(new Vector3(0, 40.0f, 0), new Vector3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
 
-            int amount = 1;
+            projection = Matrix4.CreatePerspectiveFieldOfView(camera.zoom, size.X / (float)size.Y, 0.01f, 1000.0f);
 
-            world = new Chunk[amount * amount];
+
+            world = new Chunk[amount, amount];
+                        
+            for (int i = 0; i < amount; i++)
+            {
+                for (int j = 0; j < amount; j++)
+                {
+                    world[i, j] = new Chunk(i, j);
+                }
+            }
 
             for (int i = 0; i < amount; i++)
             {
                 for (int j = 0; j < amount; j++)
                 {
-                    world[i * amount + j] = new Chunk(i, j);
+                    List<Chunk> neigbor = new List<Chunk>();
+                    int x = world[i, j].position.X;
+                    int y = world[i, j].position.Y;
+
+                    if (y - 1 >= 0) neigbor.Add(world[x, y - 1]);
+                    if (y + 1 < amount) neigbor.Add(world[x, y + 1]);
+                    if (x - 1 >= 0) neigbor.Add(world[x - 1, y]);
+                    if (x + 1 < amount) neigbor.Add(world[x + 1, y]);
+
+                    world[i, j].neigborChunks = neigbor;
                 }
             }
 
-            for (int i = 0; i < world.Length; i++)
+            foreach (Chunk chunk in world)
             {
-                List<Chunk> neigbor = new List<Chunk>();
-                int x = world[i].position.X;
-                int y = world[i].position.Y;
-
-                if (y - 1 >= 0) neigbor.Add(world[i - 1]);
-                if (y + 1 < amount) neigbor.Add(world[i + 1]);
-                if (x - 1 >= 0) neigbor.Add(world[i - amount]);
-                if (x + 1 < amount) neigbor.Add(world[i + amount]);
-
-                if (x - 1 >= 0 && y - 1 >= 0) neigbor.Add(world[i - 1 - amount]);
-                if (x - 1 >= 0 && y + 1 < amount) neigbor.Add(world[i + 1 - amount]);
-                if (x + 1 < amount && y - 1 >= 0) neigbor.Add(world[i - 1 + amount]);
-                if (x + 1 < amount && y + 1 < amount) neigbor.Add(world[i + 1 + amount]);
-
-                world[i].neigborChunks = neigbor;
-            }      
+                chunk.SetCubeDrawingFaces();
+                chunk.UpdateChunkData();
+            }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
@@ -152,12 +157,22 @@ namespace Cubicus
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             
-            Matrix4 projection = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver2, size.X / (float) size.Y, 0.01f, 1000.0f);
             Matrix4 view = camera.GetViewMatrix();
 
-            for (int i = 0; i < world.Length; i++)
+            Vector2i chunkSize = new Vector2i(world[0, 0].size.X, world[0, 0].size.Z);
+
+            Vector2i playerInChunk = new Vector2i((int)camera.position.X / chunkSize.X, (int)camera.position.Z / chunkSize.Y);
+
+            for (int i = -range; i <= range; i++)
             {
-                world[i].Draw(projection, view, camera.position);
+                for (int j = -range; j <= range; j++)
+                {
+                    int x = playerInChunk.X + j;
+                    int y = playerInChunk.Y + i;
+
+                    if (x < 0 || y < 0 || x >= amount || y >= amount) continue;
+                    world[x, y].Draw(projection, view, camera.position);
+                }
             }
 
             SwapBuffers();

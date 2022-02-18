@@ -16,7 +16,7 @@ namespace Cubicus
             Down
         }
 
-        private const float SPEED = 3.5f;
+        private const float SPEED = 7.5f;
         private const float SENSITIVITY = 0.16f;
 
         public Vector3 position;
@@ -29,7 +29,7 @@ namespace Cubicus
         public float pitch;
         public float movementSpeed = SPEED;
         public float mouseSensitivity = SENSITIVITY;
-        public float zoom = 45.0f;
+        public float zoom = MathHelper.PiOver2;
 
         public Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch)
         { 
@@ -64,12 +64,11 @@ namespace Cubicus
 
             if (dir == CameraMovement.Forward)
             {
-                position += front * velocity;
+                position += new Vector3(front.X, 0.0f, front.Z) * velocity;
             }
             if (dir == CameraMovement.Backward)
             {
-                position.X -= front.X * velocity;
-                position.Z -= front.Z * velocity;
+                position -= new Vector3(front.X, 0.0f, front.Z) * velocity;
             }
             if (dir == CameraMovement.Left)
                 position -= right * velocity;

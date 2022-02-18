@@ -2,11 +2,16 @@
 
 in vec2 texCoord;
 
-out vec3 color;
+out vec4 color;
 
 uniform sampler2D tex;
 uniform vec3 camPos;
 
 void main() {
-	color = vec3(texture(tex, texCoord));
+	vec4 texColor = texture(tex, texCoord);
+
+	if (texColor.a < 0.1)
+		discard;
+
+	color = texColor;
 }

@@ -18,7 +18,7 @@ namespace Cubicus
 
             using (var image = new Bitmap(path))
             {
-                image.RotateFlip(RotateFlipType.RotateNoneFlipY);
+                //image.RotateFlip(RotateFlipType.RotateNoneFlipY);
 
                 var data = image.LockBits(new Rectangle(0, 0, image.Width, image.Height),
                     ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
