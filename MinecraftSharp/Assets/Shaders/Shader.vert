@@ -12,7 +12,7 @@ uniform mat4 view;
 
 void main() {
 	texCoord = aTexCoord;
-
+	
 	gl_Position = proj * view * model * vec4(aPosition, 1.0);
 
 }

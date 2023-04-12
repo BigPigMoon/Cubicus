@@ -60,6 +60,12 @@ namespace Cubicus
             GL.UniformMatrix4(location, false, ref mat);
         }
 
+        public void SetUniformInt(string name, int value)
+        {
+            int location = GL.GetUniformLocation(_program, name);
+            GL.Uniform1(location, value);
+        }
+
         private int CreateShader(ShaderType shaderType, string shaderFile)
         {
             string shaderStr = File.ReadAllText(shaderFile);

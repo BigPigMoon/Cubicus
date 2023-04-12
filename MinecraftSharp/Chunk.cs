@@ -22,7 +22,7 @@ namespace Cubicus
 
         public Vector2i position;
 
-        public Vector3i size = new Vector3i(16, 128, 16);
+        public Vector3i size = new Vector3i(16, 256, 16);
 
         public Chunk(int x, int y)
         {
@@ -49,10 +49,14 @@ namespace Cubicus
                 {
                     for (int i = 0; i < size.X; i++)
                     {
+                        cubes.Add(new Cube(new Vector3i(i, j, k), 1));
                         cubes[i + k * size.Z + j * (size.X * size.Z)].air = false;
                     }
                 }
             }
+
+            SetCubeDrawingFaces();
+            UpdateChunkData();
         }
 
         public void SetCubeDrawingFaces()
@@ -76,36 +80,23 @@ namespace Cubicus
             int z = pos.Z;
             int s = size.X * size.Y * size.Z;
 
-            Chunk neighbor = GetNeighborChunk(position.X - 1, position.Y);
-            if ((x - 1 < 0 && neighbor == null) || (x - 1 < 0 && neighbor.cubes[x + size.X - 1 + z * size.Z + y * size.X * size.Z].air) ||
-                (x - 1 + z * size.Z + y * size.X * size.Z > 0 && cubes[x - 1 + z * size.Z + y * size.X * size.Z].air)) ret |= Faces.Left;
+            var down = x + z * size.Z + (y - 1) * size.X * size.Z;
+            var up = x + z * size.Z + (y + 1) * size.X * size.Z;
+            var left = x + 1 + z * size.Z + y * size.X * size.Z;
+            var right = x - 1 + z * size.Z + y * size.X * size.Z;
+            var front = x + (z - 1) * size.Z + y * size.X * size.Z;
+            var back = x + (z + 1) * size.Z + y * size.X * size.Z;
 
-            neighbor = GetNeighborChunk(position.X + 1, position.Y);
-            if ((x + 1 >= size.X && neighbor == null) || (x + 1 >= size.X && neighbor.cubes[x - size.X + 1 + z * size.Z + y * size.X * size.Z].air) ||
-                (x + 1 + z * size.Z + y * size.X * size.Z < s && cubes[x + 1 + z * size.Z + y * size.X * size.Z].air)) ret |= Faces.Right;
+            if (x - 1 < 0 || right > 0 && cubes[right].air) ret |= Faces.Left;
+            if (x + 1 >= size.X || left < s && cubes[left].air) ret |= Faces.Right;
+            if (z - 1 < 0 || front > 0 && cubes[front].air) ret |= Faces.Back;
+            if (z + 1 >= size.Z || back < s && cubes[back].air) ret |= Faces.Front;
+            if (y - 1 < 0 || down > s || down > 0 && cubes[down].air) ret |= Faces.Down;
+            if (y + 1 >= size.Y || up < s && cubes[up].air) ret |= Faces.Up;
 
-            neighbor = GetNeighborChunk(position.X, position.Y - 1);
-            if ((z - 1 < 0 && neighbor == null) || (z - 1 < 0 && neighbor.cubes[x + (z + size.Z - 1) * size.Z + y * size.X * size.Z].air) ||
-                (x + (z - 1) * size.Z + y * size.X * size.Z > 0 && cubes[x + (z - 1) * size.Z + y * size.X * size.Z].air)) ret |= Faces.Back;
-
-            neighbor = GetNeighborChunk(position.X, position.Y + 1);
-            if ((z + 1 >= size.Z && neighbor == null) || (z + 1 >= size.Z && neighbor.cubes[x + (z - size.Z + 1) * size.Z + y * size.X * size.Z].air) ||
-                x + (z + 1) * size.Z + y * size.X * size.Z < s && cubes[x + (z + 1) * size.Z + y * size.X * size.Z].air) ret |= Faces.Front;
-
-            if (y - 1 < 0 || x + z * size.Z + (y - 1) * size.X * size.Z > 0 && cubes[x + z * size.Z + (y - 1) * size.X * size.Z].air) ret |= Faces.Down;
-            if (y + 1 >= size.Y || x + z * size.Z + (y + 1) * size.X * size.Z < s && cubes[x + z * size.Z + (y + 1) * size.X * size.Z].air) ret |= Faces.Up;
-
+            //ret = Faces.Front | Faces.Back | Faces.Right | Faces.Left | Faces.Up | Faces.Down;
 
             return ret;
-        }
-
-        private Chunk GetNeighborChunk(int x, int y)
-        {
-            foreach (Chunk item in neigborChunks)
-                if (item.position.X == x && item.position.Y == y)
-                    return item;
-
-            return null;
         }
 
         public void UpdateChunkData()
@@ -117,17 +108,17 @@ namespace Cubicus
             foreach (Cube item in drawingCubes)
             {
                 if (item.visibleFaces.HasFlag(Faces.Front))
-                    data.Add(addVertex(Faces.Front, item.frontVertex, item.position));
+                    data.Add(AddVertex(Faces.Front, item.frontVertex, item.position));
                 if (item.visibleFaces.HasFlag(Faces.Back))
-                    data.Add(addVertex(Faces.Back, item.backVertex, item.position));
+                    data.Add(AddVertex(Faces.Back, item.backVertex, item.position));
                 if (item.visibleFaces.HasFlag(Faces.Left))
-                    data.Add(addVertex(Faces.Left, item.leftVertex, item.position));
+                    data.Add(AddVertex(Faces.Left, item.leftVertex, item.position));
                 if (item.visibleFaces.HasFlag(Faces.Right))
-                    data.Add(addVertex(Faces.Right, item.rightVertex, item.position));
+                    data.Add(AddVertex(Faces.Right, item.rightVertex, item.position));
                 if (item.visibleFaces.HasFlag(Faces.Up))
-                    data.Add(addVertex(Faces.Up, item.upVertex, item.position));
+                    data.Add(AddVertex(Faces.Up, item.upVertex, item.position));
                 if (item.visibleFaces.HasFlag(Faces.Down))
-                    data.Add(addVertex(Faces.Down, item.downVertex, item.position));
+                    data.Add(AddVertex(Faces.Down, item.downVertex, item.position));
             }
 
             List<float> vertex = new List<float>();
@@ -144,7 +135,7 @@ namespace Cubicus
         }
 
         private void CreateVAO()
-        { 
+        {
             BufferObject vbo = new BufferObject(BufferType.ArrayBuffer);
 
             vbo.SetData(chunkVertex, BufferHint.StaticDraw);
@@ -165,7 +156,7 @@ namespace Cubicus
             vao.DisableAttribAll();
         }
 
-        private float[] addVertex(Faces face, float[] vertex, Vector3 pos)
+        private float[] AddVertex(Faces face, float[] vertex, Vector3 pos)
         {
             List<float> data = new List<float>();
 
@@ -184,11 +175,10 @@ namespace Cubicus
             return data.ToArray();
         }
 
-        public void Draw(Matrix4 projection, Matrix4 view, Vector3 cameraPos)
+        public void Draw(Matrix4 projection, Matrix4 view)
         {
             Matrix4 model = Matrix4.Identity;
 
-            //model = model * Matrix4.CreateTranslation(position);
             model = model * Matrix4.CreateTranslation(new Vector3(position.X * size.X, 0, position.Y * size.Z));
 
             texture.Use(TextureUnit.Texture0);
@@ -198,6 +188,9 @@ namespace Cubicus
             shader.SetUniformMat4("proj", projection);
             shader.SetUniformMat4("view", view);
             shader.SetUniformMat4("model", model);
+            shader.SetUniformVec3("selectedCube", new Vector3(0, 0, 0));
+            shader.SetUniformInt("isSelectedCube", 1);
+
 
             vao.Activate();
             vao.Draw(0, vertexCount);

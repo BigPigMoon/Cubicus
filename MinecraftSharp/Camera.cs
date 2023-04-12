@@ -20,33 +20,25 @@ namespace Cubicus
         private const float SENSITIVITY = 0.16f;
 
         public Vector3 position;
-        public Vector3 front;
+        public Vector3 forward;
         public Vector3 up;
         public Vector3 right;
         public Vector3 worldUp;
+        public Vector3 lookAt;
 
+        // рысканье
         public float yaw;
+        // тангаж
         public float pitch;
         public float movementSpeed = SPEED;
         public float mouseSensitivity = SENSITIVITY;
         public float zoom = MathHelper.PiOver2;
-
-        public Camera(float posX, float posY, float posZ, float upX, float upY, float upZ, float yaw, float pitch)
-        { 
-            position = new Vector3(posX, posY, posZ);
-            worldUp = new Vector3(upX, upY, upZ);
-            front = new Vector3(0.0f, 0.0f, -1.0f);
-            this.yaw = yaw;
-            this.pitch = pitch;
-
-            UpdateCameraVectors();
-        }
         
         public Camera(Vector3 pos, Vector3 up, float yaw, float pitch)
         { 
             position = pos;
             worldUp = up;
-            front = new Vector3(0.0f, 0.0f, -1.0f);
+            forward = new Vector3(0.0f, 0.0f, -1.0f);
             this.yaw = yaw;
             this.pitch = pitch;
 
@@ -55,29 +47,43 @@ namespace Cubicus
 
         public Matrix4 GetViewMatrix()
         {
-            return Matrix4.LookAt(position, position + front, up);
+            return Matrix4.LookAt(position, position + lookAt, up);
         }
 
         public void ProcessKeyboard(CameraMovement dir, float deltaTime)
         {
-            float velocity = movementSpeed * deltaTime;
+            var inputVector = GetInputVector(dir);
+
+            //var direction = new Vector3(forward.X, 0.0f, forward.Z).Normalized() * inputVector.Z;
+
+            var direction = forward * inputVector.Z + right * inputVector.X + new Vector3(0, up.Y, 0) * inputVector.Y;
+
+            position += direction * movementSpeed * deltaTime;
+        }
+
+        private Vector3 GetInputVector(CameraMovement dir)
+        {
+            var inputVector = new Vector3();
 
             if (dir == CameraMovement.Forward)
-            {
-                position += new Vector3(front.X, 0.0f, front.Z) * velocity;
-            }
+                inputVector.Z = 1;
+
             if (dir == CameraMovement.Backward)
-            {
-                position -= new Vector3(front.X, 0.0f, front.Z) * velocity;
-            }
-            if (dir == CameraMovement.Left)
-                position -= right * velocity;
+                inputVector.Z = -1;
+
             if (dir == CameraMovement.Right)
-                position += right * velocity;
+                inputVector.X = 1;
+
+            if (dir == CameraMovement.Left)
+                inputVector.X = -1;
+
             if (dir == CameraMovement.Up)
-                position += new Vector3(0.0f, 1.0f, 0.0f) * velocity;
+                inputVector.Y = 1;
+
             if (dir == CameraMovement.Down)
-                position -= new Vector3(0.0f, 1.0f, 0.0f) * velocity;
+                inputVector.Y = -1;
+
+            return inputVector;
         }
 
         public void ProcessMouseMovement(float xoffset, float yoffset)
@@ -98,13 +104,15 @@ namespace Cubicus
 
         private void UpdateCameraVectors()
         {
-            front.X = (float)(MathHelper.Cos(MathHelper.DegreesToRadians(yaw)) * MathHelper.Cos(MathHelper.DegreesToRadians(pitch)));
-            front.Y = (float)(MathHelper.Sin(MathHelper.DegreesToRadians(pitch)));
-            front.Z = (float)(MathHelper.Sin(MathHelper.DegreesToRadians(yaw)) * MathHelper.Cos(MathHelper.DegreesToRadians(pitch)));
+            float cosPitch = (float)MathHelper.Cos(MathHelper.DegreesToRadians(pitch));
+            float sinPitch = (float)MathHelper.Sin(MathHelper.DegreesToRadians(pitch));
+            float cosYaw = (float)MathHelper.Cos(MathHelper.DegreesToRadians(yaw));
+            float sinYaw = (float)MathHelper.Sin(MathHelper.DegreesToRadians(yaw));
 
-            front.Normalize();
-            right = Vector3.Normalize(Vector3.Cross(front, worldUp));
-            up = Vector3.Normalize(Vector3.Cross(right, front));
+            lookAt = new Vector3(cosYaw * cosPitch, sinPitch, sinYaw * cosPitch);
+            forward = new Vector3(cosYaw * cosPitch, 0, sinYaw * cosPitch).Normalized();
+            right = Vector3.Normalize(Vector3.Cross(forward, worldUp));
+            up = Vector3.Normalize(Vector3.Cross(right, forward));
         }
     }
 }

@@ -11,15 +11,13 @@ namespace Cubicus
     public class Game : GameWindow
     {
         private float deltaTime;
+        private float updateFPS;
         private Vector2 size;
         private Vector2 lastMousePos;
         private bool polyVisible = true;
 
-        private int range = 10;
-        private int amount = 9;
-
         private Camera camera;
-        private Chunk[,] world;
+        private Cube cube;
 
         Matrix4 projection;
 
@@ -49,54 +47,27 @@ namespace Cubicus
         {
             base.OnLoad();
 
-            GL.ClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+            GL.ClearColor(0.2f, 0.2f, 0.2f, 0.2f);
             GL.Enable(EnableCap.CullFace);
             GL.CullFace(CullFaceMode.Front);
+            GL.Enable(EnableCap.DepthTest);
 
-            camera = new Camera(new Vector3(0, 40.0f, 0), new Vector3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
+            camera = new Camera(new Vector3(0, 4.0f, 0), new Vector3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f);
 
             projection = Matrix4.CreatePerspectiveFieldOfView(camera.zoom, size.X / (float)size.Y, 0.01f, 1000.0f);
 
-
-            world = new Chunk[amount, amount];
-                        
-            for (int i = 0; i < amount; i++)
-            {
-                for (int j = 0; j < amount; j++)
-                {
-                    world[i, j] = new Chunk(i, j);
-                }
-            }
-
-            for (int i = 0; i < amount; i++)
-            {
-                for (int j = 0; j < amount; j++)
-                {
-                    List<Chunk> neigbor = new List<Chunk>();
-                    int x = world[i, j].position.X;
-                    int y = world[i, j].position.Y;
-
-                    if (y - 1 >= 0) neigbor.Add(world[x, y - 1]);
-                    if (y + 1 < amount) neigbor.Add(world[x, y + 1]);
-                    if (x - 1 >= 0) neigbor.Add(world[x - 1, y]);
-                    if (x + 1 < amount) neigbor.Add(world[x + 1, y]);
-
-                    world[i, j].neigborChunks = neigbor;
-                }
-            }
-
-            foreach (Chunk chunk in world)
-            {
-                chunk.SetCubeDrawingFaces();
-                chunk.UpdateChunkData();
-            }
+            cube = new Cube(new Vector3i(0, 0, 0), 1);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs args)
         {
             deltaTime = (float)args.Time;
 
-            Title = (1.0f / deltaTime).ToString();
+            if (updateFPS > 1)
+            {
+                updateFPS = 0;
+                Title = (1.0f / deltaTime).ToString();
+            }
 
             var key = KeyboardState;
 
@@ -106,7 +77,7 @@ namespace Cubicus
             if (key.IsKeyPressed(Keys.F3))
             {
                 CursorGrabbed = !CursorGrabbed;
-            }    
+            }
 
             if (key.IsKeyPressed(Keys.F4))
             {
@@ -115,18 +86,21 @@ namespace Cubicus
                 else
                     GL.PolygonMode(MaterialFace.Back, PolygonMode.Fill);
                 polyVisible = !polyVisible;
-            }    
+            }
 
             CameraMove(key);
 
             if (CursorGrabbed)
                 MouseMovement();
 
+            updateFPS += deltaTime;
+
             base.OnUpdateFrame(args);
         }
 
         private void CameraMove(KeyboardState key)
         {
+            // TODO: move this to camera scprit
             if (key.IsKeyDown(Keys.W))
                 camera.ProcessKeyboard(Camera.CameraMovement.Forward, deltaTime);
             if (key.IsKeyDown(Keys.A))
@@ -156,24 +130,10 @@ namespace Cubicus
         protected override void OnRenderFrame(FrameEventArgs args)
         {
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            
+
             Matrix4 view = camera.GetViewMatrix();
 
-            Vector2i chunkSize = new Vector2i(world[0, 0].size.X, world[0, 0].size.Z);
-
-            Vector2i playerInChunk = new Vector2i((int)camera.position.X / chunkSize.X, (int)camera.position.Z / chunkSize.Y);
-
-            for (int i = -range; i <= range; i++)
-            {
-                for (int j = -range; j <= range; j++)
-                {
-                    int x = playerInChunk.X + j;
-                    int y = playerInChunk.Y + i;
-
-                    if (x < 0 || y < 0 || x >= amount || y >= amount) continue;
-                    world[x, y].Draw(projection, view, camera.position);
-                }
-            }
+            cube.Draw(projection, view);
 
             SwapBuffers();
             base.OnRenderFrame(args);
